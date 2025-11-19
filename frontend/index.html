@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Trading Position Size Calculator</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%2300ff00'/><text x='50' y='60' font-family='monospace' font-size='60' text-anchor='middle' fill='%23000'>$</text></svg>">
+</head>
+<body>
+
+<div class="wallet-section">
+    <strong>Connect Web3 Wallet:</strong>
+    <button class="wallet-btn" onclick="connectWallet('ethereum')">Connect Ethereum</button>
+    <button class="wallet-btn" onclick="connectWallet('bitcoin')">Connect Bitcoin</button>
+    <button class="wallet-btn" onclick="connectWallet('solana')">Connect Solana</button>
+    <div id="walletInfo" class="wallet-info"></div>
+</div>
+
+<h1>POSITION SIZE CALCULATOR</h1>
+
+<div class="container">
+    <!-- Left Column - Form -->
+    <div class="form-column">
+        <form id="calculatorForm">
+            <div class="form-group">
+                <label>Account Size ($):</label>
+                <input type="number" id="accountSize" step="any" required placeholder="Enter account size...">
+            </div>
+
+            <div class="form-group">
+                <label>Amount to Risk ($):</label>
+                <input type="number" id="riskDollars" step="any" required placeholder="Enter risk amount...">
+            </div>
+
+            <div class="form-group">
+                <label>Entry Price:</label>
+                <input type="number" id="entryPrice" step="any" required placeholder="Enter entry price...">
+            </div>
+
+            <div class="form-group">
+                <label>Stop Loss Price:</label>
+                <input type="number" id="stopLoss" step="any" required placeholder="Enter stop loss...">
+            </div>
+
+            <div class="form-group">
+                <label>Target Price (optional):</label>
+                <input type="number" id="targetPrice" step="any" placeholder="Enter target price...">
+            </div>
+
+            <div class="button-group">
+                <button type="button" onclick="calculatePosition()">CALCULATE</button>
+                <button type="button" onclick="clearForm()">CLEAR</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Right Column - Results -->
+    <div class="results-column">
+        <div class="result-panel">
+            <div id="result" class="result-content hidden"></div>
+            <div id="defaultMessage" class="result-content">
+Enter your trading parameters and click CALCULATE to see your MAXIMUM position size based on the input risk metrics.
+                ─────────────────────────────────────────
+Note: This is a risk calculation, not a trading recommendation.
+            </div>
+        </div>
+    </div>
+
+    <div id="error" class="error hidden"></div>
+</div>
+
+<div class="terminal-footer">
+    © PF - 2025
+</div>
+
+<script>
+    // Web3 Wallet Integration
+    async function connectWallet(chain) {
+        const walletInfo = document.getElementById('walletInfo');
+
+        if (typeof window.ethereum !== 'undefined' && chain === 'ethereum') {
+            // MetaMask for Ethereum
+            try {
+                const accounts = await window.ethereum.request({
+                    method: 'eth_requestAccounts'
+                });
+                const address = accounts[0];
+                await fetchWalletBalance(address, chain);
+            } catch (error) {
+                walletInfo.innerHTML = `❌ Error: ${error.message}`;
+            }
+        } else {
+            // For BTC/SOL or manual entry
+            const address = prompt(`Enter ${chain.toUpperCase()} wallet address:`);
+            if (address) {
+                await fetchWalletBalance(address, chain);
+            }
+        }
+    }
+
+    async function fetchWalletBalance(address, chain) {
+        const walletInfo = document.getElementById('walletInfo');
+        walletInfo.innerHTML = `🔍 Querying ${chain} balance...`;
+
+        try {
+            const response = await fetch('http://localhost:8080/wallet/connect', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ address, chain })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                walletInfo.innerHTML = `
+                ✅ Connected: ${address.substring(0, 6)}...${address.substring(address.length - 4)}
+                💰 Balance: $${data.total_value_usd?.toLocaleString() || 'N/A'}
+            `;
+                // Auto-fill account size
+                document.getElementById('accountSize').value = data.total_value_usd?.toFixed(2) || '0';
+            } else {
+                walletInfo.innerHTML = `❌ Error: ${data}`;
+            }
+        } catch (error) {
+            walletInfo.innerHTML = `❌ Network error: ${error.message}`;
+        }
+    }
+
+    // Calculator Functions
+    async function calculatePosition() {
+        // Clear previous results
+        hideElement('result');
+        hideElement('error');
+        showElement('defaultMessage');
+
+        // Get input values - DON'T include targetPrice if empty
+        const request = {
+            account_size: parseFloat(document.getElementById('accountSize').value),
+            risk_dollars: parseFloat(document.getElementById('riskDollars').value),
+            entry_price: parseFloat(document.getElementById('entryPrice').value),
+            stop_loss: parseFloat(document.getElementById('stopLoss').value)
+            // target_price is NOT included here initially
+        };
+
+        // Only add target_price if it has a REAL value
+        const targetPriceInput = document.getElementById('targetPrice').value;
+        if (targetPriceInput && targetPriceInput.trim() !== '') {
+            request.target_price = parseFloat(targetPriceInput);
+        }
+
+        // Basic validation
+        if (Object.values(request).some(v => isNaN(v) || v <= 0)) {
+            showError('Please fill in all required fields with valid values');
+            return;
+        }
+
+        try {
+            const response = await fetch('http://localhost:8080/calculate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(request)
+            });
+
+            console.log("Response status:", response.status);
+            const responseText = await response.text();
+            console.log("Raw response:", responseText);
+
+            const data = JSON.parse(responseText);
+
+            if (!response.ok) {
+                showError(data.error || 'Calculation failed');
+                return;
+            }
+
+            displayResults(request, data);
+
+        } catch (error) {
+            console.log("Error details:", error);
+            showError('Network error: ' + error.message);
+        }
+    }
+
+    function displayResults(inputs, result) {
+        const entryPriceStr = document.getElementById('entryPrice').value;
+        const stopLossStr = document.getElementById('stopLoss').value;
+        const targetPriceStr = document.getElementById('targetPrice').value;
+
+        const resultText = `POSITION CALCULATION RESULTS
+─────────────────────────────
+Account Size: ${formatDynamicCurrency(inputs.account_size, document.getElementById('accountSize').value)}
+Risk Amount: ${formatDynamicCurrency(inputs.risk_dollars, document.getElementById('riskDollars').value)}
+Risk Percentage: ${result.risk_percentage.toFixed(2)}%
+
+Entry Price: ${formatDynamicCurrency(inputs.entry_price, entryPriceStr)}
+Stop Loss: ${formatDynamicCurrency(inputs.stop_loss, stopLossStr)}
+${targetPriceStr ? `Target Price: ${formatDynamicCurrency(inputs.target_price, targetPriceStr)}` : ''}
+
+MAX POSITION SIZE: ${formatDynamicPosition(result.units_to_buy)} units
+Total Investment: ${formatCurrency(result.total_position_size)}
+Risk/Reward Ratio: ${result.risk_reward_ratio || 'N/A'}
+─────────────────────────────`;
+
+        document.getElementById('result').textContent = resultText;
+        showElement('result');
+        hideElement('defaultMessage');
+    }
+
+    function formatDynamicCurrency(value, inputStr) {
+        const decimals = inputStr.includes('.') ? inputStr.split('.')[1].length : 0;
+        return formatCurrency(value, decimals);
+    }
+
+    function formatCurrency(value, decimals = 2) {
+        return '$' + value.toLocaleString('en-US', {
+            minimumFractionDigits: decimals,
+            maximumFractionDigits: decimals
+        });
+    }
+
+    function formatDynamicPosition(size) {
+        if (size >= 1000000) return size.toLocaleString('en-US', {maximumFractionDigits: 0});
+        if (size >= 1000) return size.toLocaleString('en-US', {maximumFractionDigits: 1});
+        if (size >= 100) return size.toFixed(1);
+        if (size >= 10) return size.toFixed(2);
+        if (size >= 1) return size.toFixed(3);
+        return size.toFixed(4);
+    }
+
+    function showError(message) {
+        document.getElementById('error').textContent = 'ERROR: ' + message;
+        showElement('error');
+        showElement('defaultMessage');
+    }
+
+    function showElement(id) {
+        document.getElementById(id).classList.remove('hidden');
+    }
+
+    function hideElement(id) {
+        document.getElementById(id).classList.add('hidden');
+    }
+
+    function clearForm() {
+        document.getElementById('calculatorForm').reset();
+        hideElement('result');
+        hideElement('error');
+        showElement('defaultMessage');
+    }
+
+    // Interactive effects
+    document.addEventListener('DOMContentLoaded', function() {
+        const inputs = document.querySelectorAll('input');
+        inputs.forEach(input => {
+            input.addEventListener('focus', function() {
+                this.style.boxShadow = '0 0 15px rgba(0, 255, 0, 0.5)';
+            });
+            input.addEventListener('blur', function() {
+                this.style.boxShadow = 'none';
+            });
+        });
+    });
+</script>
+</body>
+</html>

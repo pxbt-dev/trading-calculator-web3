@@ -2,6 +2,17 @@ use actix_web::{web, App, HttpServer, HttpResponse, Result};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use reqwest::Client;
+use actix_cors::Cors;
+
+use actix_files::Files;
+
+// Serve frontend
+async fn index() -> Result<HttpResponse, actix_web::Error> {
+    Ok(HttpResponse::Ok()
+        .content_type("text/html")
+        .body(include_str!("../../frontend/index.html")))
+}
+
 
 // Ethereum
 use ethers::{
@@ -83,23 +94,23 @@ async fn get_sol_balance(address: &str) -> Result<f64, Box<dyn std::error::Error
     println!("🔍 Querying SOL balance for: {}", address);
     
     let rpc_url = "https://api.mainnet-beta.solana.com".to_string();
-    let address = address.to_string(); // Clone for move
+    let address = address.to_string();
     
     // Use tokio::task::spawn_blocking with thread-safe errors
     let balance = tokio::task::spawn_blocking(move || {
         let client = RpcClient::new(rpc_url);
         let pubkey: Pubkey = match address.parse() {
             Ok(pk) => pk,
-            Err(e) => return Err(e.to_string()), // Convert to String error
+            Err(e) => return Err(e.to_string()),
         };
         
         let balance_lamports = match client.get_balance(&pubkey) {
             Ok(bal) => bal,
-            Err(e) => return Err(e.to_string()), // Convert to String error
+            Err(e) => return Err(e.to_string()),
         };
         
         let balance_sol = balance_lamports as f64 / LAMPORTS_PER_SOL as f64;
-        Ok::<f64, String>(balance_sol) // Use String instead of Box<dyn Error>
+        Ok::<f64, String>(balance_sol)
     })
     .await
     .map_err(|e| Box::new(e) as Box<dyn std::error::Error>)? // Handle JoinError
@@ -273,14 +284,28 @@ async fn health_check() -> Result<HttpResponse> {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     println!("🔥 Starting Trading Calculator Web3 Backend on http://127.0.0.1:8080");
-    
+
     HttpServer::new(|| {
+        // CORS CONFIGURATION
+        let _cors = Cors::default()
+            .allow_any_origin()
+            .allow_any_method()
+            .allow_any_header()
+            .max_age(3600);
+
         App::new()
+            .wrap(_cors)
+            // Serve the main page
+            .route("/", web::get().to(index))
+            // Serve static files (CSS, JS, etc.)
+            .service(Files::new("/css", "../frontend/css").show_files_listing())
+            .service(Files::new("/js", "./frontend/js").show_files_listing())
+            // Existing API routes
             .route("/health", web::get().to(health_check))
             .route("/calculate", web::post().to(calculate_position))
             .route("/wallet/connect", web::post().to(connect_wallet))
     })
-    .bind("127.0.0.1:8080")?
-    .run()
-    .await
+        .bind("127.0.0.1:8080")?
+        .run()
+        .await
 }
