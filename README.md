@@ -50,9 +50,3 @@ Response: {"address":"9WzDXwBbmkg8ZTbNMqUxvQRAyrZzDsGYdLVL9zYtAWWM","chain":"sol
 - Live price data
 - Position size calculations
 - Production-scale performance
-
-## 📁 Project Structure
-trading-calculator-web3/
-├── backend/          # Rust API server
-├── contracts/        # Solidity smart contracts
-└── README.md
