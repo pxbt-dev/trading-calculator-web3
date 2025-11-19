@@ -8,7 +8,9 @@ First attempt at a Web3 version of trading-calculator-web allowing users to conn
 
 ## 📋 Project Status
 - **Backend**: 🚧 simple wallet querying features implemented (please see examples below)
-- **Frontend**: 🚧 In Development
+- **Frontend**: 🚧 Implemented with manual wallet input that fetches balance with RPC call, more to do
+- **Deploy**: 🚧 In analysis
+
 
 ## 🚀 Live API Examples
 
