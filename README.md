@@ -7,7 +7,7 @@
 First attempt at a Web3 version of trading-calculator-web allowing users to connect Bitcoin, Ethereum or Solana wallet to pre-fill values - // WIP
 
 ## 📋 Project Status
-- **Backend**: ✅ (please see examples below)
+- **Backend**: 🚧 simple wallet querying features implemented (please see examples below)
 - **Frontend**: 🚧 In Development
 
 ## 🚀 Live API Examples
