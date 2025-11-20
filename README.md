@@ -8,7 +8,7 @@ Web3 version of trading-calculator-web allowing users to query Bitcoin, Ethereum
 
 ## 📋 Project Status
 - **Backend**: 🚧 Simple wallet querying features implemented (please see examples below) along with trading calcualtor
-- **Frontend**: 🚧 Implemented with manual wallet input that fetches wallet balance with RPC call, and pre-populates account size.
+- **Frontend**: 🚧 Implemented with manual wallet input (for now) that fetches wallet balance with RPC call, and pre-populates account size.
 - **Deploy**: 🚧 In analysis, Railway / GCP.
 
 
