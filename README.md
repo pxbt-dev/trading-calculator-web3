@@ -12,7 +12,7 @@ Web3 version of trading-calculator-web allowing users to query Bitcoin, Ethereum
 - **Deploy**: 🚧 In analysis, Railway / GCP.
 
 
-## 🚀 Live API Examples
+## 🚀 API Examples
 
 ### Multi-Chain Wallet Queries
 
