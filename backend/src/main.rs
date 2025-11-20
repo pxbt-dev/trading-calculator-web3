@@ -302,8 +302,8 @@ async fn main() -> std::io::Result<()> {
             // Serve the main page
             .route("/", web::get().to(index))
             // Serve static files (CSS, JS, etc.)
-            .service(Files::new("/css", "../frontend/css").show_files_listing())
-            .service(Files::new("/js", "./frontend/js").show_files_listing())
+            .service(Files::new("/css", "frontend/css").show_files_listing())
+            .service(Files::new("/js", "frontend/js").show_files_listing())
             // Existing API routes
             .route("/health", web::get().to(health_check))
             .route("/calculate", web::post().to(calculate_position))

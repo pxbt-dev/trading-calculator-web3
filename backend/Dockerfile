@@ -9,11 +9,8 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /app
 
-# Copy everything from current directory (which is the backend)
+# Copy your source code
 COPY . .
-
-# Copy frontend to the same relative path as local development
-COPY frontend/ ../../frontend/
 
 # Build your application
 RUN cargo build --release
@@ -27,8 +24,14 @@ RUN apt-get update && apt-get install -y \
     libssl3 \
     && rm -rf /var/lib/apt/lists/*
 
+# Create app directory
+WORKDIR /app
+
 # Copy the built binary
-COPY --from=builder /app/target/release/backend /usr/local/bin/
+COPY --from=builder /app/target/release/backend .
+
+# Copy frontend files for runtime
+COPY --from=builder /app/frontend ./frontend/
 
 # Set the startup command
-CMD ["/usr/local/bin/backend"]
+CMD ["./backend"]
