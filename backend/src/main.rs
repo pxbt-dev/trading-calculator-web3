@@ -10,7 +10,7 @@ use actix_files::Files;
 async fn index() -> Result<HttpResponse, actix_web::Error> {
     Ok(HttpResponse::Ok()
         .content_type("text/html")
-        .body(include_str!("frontend/index.html")))
+        .body(include_str!("../frontend/index.html")))
 }
 
 
