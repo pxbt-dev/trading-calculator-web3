@@ -10,7 +10,7 @@ use actix_files::Files;
 async fn index() -> Result<HttpResponse, actix_web::Error> {
     Ok(HttpResponse::Ok()
         .content_type("text/html")
-        .body(include_str!("../../frontend/index.html")))
+        .body(include_str!("frontend/index.html")))
 }
 
 
@@ -291,14 +291,14 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(|| {
         // CORS CONFIGURATION
-        let cors = Cors::default()  // Remove underscore to use the variable
+        let cors = Cors::default()
             .allow_any_origin()
             .allow_any_method()
             .allow_any_header()
             .max_age(3600);
 
         App::new()
-            .wrap(cors)  // Use the variable here
+            .wrap(cors)
             // Serve the main page
             .route("/", web::get().to(index))
             // Serve static files (CSS, JS, etc.)
