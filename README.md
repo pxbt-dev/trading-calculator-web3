@@ -4,13 +4,15 @@
 ![Solidity](https://img.shields.io/badge/Solidity-0.8.30-blue)
 ![Web3](https://img.shields.io/badge/Web3-Multi--Chain-purple)
 
-First attempt at a Web3 version of trading-calculator-web allowing users to connect Bitcoin, Ethereum or Solana wallet to pre-fill values - // WIP
+Web3 version of trading-calculator-web allowing users to query Bitcoin, Ethereum or Solana wallet to pre-fill account size - // WIP
 
 ## 📋 Project Status
-- **Backend**: 🚧 simple wallet querying features implemented (please see examples below)
-- **Frontend**: 🚧 In Development
+- **Backend**: 🚧 Simple wallet querying features implemented (please see examples below) along with trading calcualtor
+- **Frontend**: 🚧 Implemented with manual wallet input (for now) that fetches wallet balance with RPC call, and pre-populates account size.
+- **Deploy**: 🚧 In analysis, Railway / GCP.
 
-## 🚀 Live API Examples
+
+## 🚀 API Examples
 
 ### Multi-Chain Wallet Queries
 
