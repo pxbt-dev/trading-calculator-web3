@@ -283,18 +283,22 @@ async fn health_check() -> Result<HttpResponse> {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    println!("🔥 Starting Trading Calculator Web3 Backend on http://127.0.0.1:8080");
+    // Get port from environment variable (Cloud Run provides this)
+    let port = std::env::var("PORT").unwrap_or_else(|_| "8080".to_string());
+    let bind_address = format!("0.0.0.0:{}", port);
+
+    println!("🔥 Starting Trading Calculator Web3 Backend on http://{}", bind_address);
 
     HttpServer::new(|| {
         // CORS CONFIGURATION
-        let _cors = Cors::default()
+        let cors = Cors::default()  // Remove underscore to use the variable
             .allow_any_origin()
             .allow_any_method()
             .allow_any_header()
             .max_age(3600);
 
         App::new()
-            .wrap(_cors)
+            .wrap(cors)  // Use the variable here
             // Serve the main page
             .route("/", web::get().to(index))
             // Serve static files (CSS, JS, etc.)
@@ -305,7 +309,7 @@ async fn main() -> std::io::Result<()> {
             .route("/calculate", web::post().to(calculate_position))
             .route("/wallet/connect", web::post().to(connect_wallet))
     })
-        .bind("127.0.0.1:8080")?
+        .bind(&bind_address)?
         .run()
         .await
 }
