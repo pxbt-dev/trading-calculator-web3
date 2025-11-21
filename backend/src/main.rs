@@ -289,8 +289,27 @@ async fn main() -> std::io::Result<()> {
 
     println!("🔥 Starting Trading Calculator Web3 Backend on http://{}", bind_address);
 
+    // Debug file paths
+    let current_dir = std::env::current_dir().unwrap_or_default();
+    println!("📁 Current directory: {:?}", current_dir);
+
+    let paths_to_check = vec![
+        "frontend",
+        "frontend/css",
+        "frontend/css/style.css",
+        "../frontend/css/style.css",
+        "./frontend/css/style.css"
+    ];
+
+    for path in paths_to_check {
+        let exists = std::path::Path::new(path).exists();
+        println!("📁 {} exists: {}", path, exists);
+        if exists {
+            println!("   Full path: {:?}", current_dir.join(path).canonicalize());
+        }
+    }
+
     HttpServer::new(|| {
-        // CORS CONFIGURATION
         let cors = Cors::default()
             .allow_any_origin()
             .allow_any_method()
